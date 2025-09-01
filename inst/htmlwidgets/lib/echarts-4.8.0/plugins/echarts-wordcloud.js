@@ -1618,6 +1618,12 @@ external_echarts_.registerLayout(function (ecModel, api) {
 
     var DEGREE_TO_RAD = Math.PI / 180;
     var gridSize = seriesModel.get('gridSize');
+    
+    // Use larger gridSize for rectangle shape to prevent word overlapping
+    // Rectangle shape tends to pack words more densely, so increase spacing
+    if (seriesModel.get('shape') === 'rectangle' && !seriesModel.get('gridSize')) {
+      gridSize = Math.max(gridSize, 12); // Increase from default 8 to 12 for rectangles
+    }
     layout(canvas, {
       list: data
         .mapArray('value', function (value, idx) {
