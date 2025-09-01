@@ -9,8 +9,8 @@
 #' @param ... Additional parameters passed to the wordcloud series, including:
 #'   \describe{
 #'     \item{shape}{Shape of the wordcloud. Can be 'circle', 'cardioid', 'diamond', 'rectangle', 'triangle-forward', 'triangle', 'pentagon', 'star'. The 'rectangle' shape uses horizontal orientation and fills the available width.}
-#'     \item{rectangleRatio}{Aspect ratio for rectangle shape (width:height). Default is 2.0. Only used when shape = "rectangle".}
-#'     \item{sizeRange}{Vector of two numbers specifying the range of font sizes.}
+#'     \item{rectangleRatio}{Aspect ratio for rectangle shape (width:height). Default is 2.0. Only used when shape = "rectangle". The rectangle shape maintains this ratio even with equal sizeRange values.}
+#'     \item{sizeRange}{Vector of two numbers specifying the range of font sizes. Equal values (e.g., c(20, 20)) are supported and rectangle shapes will maintain their aspect ratio.}
 #'     \item{gridSize}{Grid size for word placement collision detection. Default is 8, but larger values (10-16) can prevent word overlapping, especially with larger fonts.}
 #'     \item{drawOutOfBound}{Logical. Whether to allow words to be drawn outside the shape bounds. Default FALSE. Set to TRUE when using large font sizes.}
 #'     \item{shrinkToFit}{Logical. Whether to shrink words that don't fit within the shape. Default FALSE. Alternative to drawOutOfBound for large fonts.}
@@ -56,6 +56,12 @@
 #'   e_color_range(freq, color) |>
 #'   e_charts() |>
 #'   e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(5, 25), gridSize = 12)
+#'
+#' # Equal sizeRange values now work correctly with rectangle shapes (maintains aspect ratio)
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 4.0, sizeRange = c(20, 20))
 #' @seealso \href{https://github.com/ecomfe/echarts-wordcloud}{official documentation}
 #'
 #' @rdname e_cloud

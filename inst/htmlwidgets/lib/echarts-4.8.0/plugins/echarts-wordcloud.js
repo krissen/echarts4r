@@ -1650,7 +1650,9 @@ external_echarts_.registerLayout(function (ecModel, api) {
 
       gridSize: gridSize,
 
-      ellipticity: gridRect.height / gridRect.width,
+      ellipticity: seriesModel.get('shape') === 'rectangle' 
+        ? 1.0 / (seriesModel.get('rectangleRatio') || 2.0)
+        : gridRect.height / gridRect.width,
 
       minRotation: rotationRange[0] * DEGREE_TO_RAD,
       maxRotation: rotationRange[1] * DEGREE_TO_RAD,

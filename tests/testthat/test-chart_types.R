@@ -883,6 +883,50 @@ test_that("e_cloud with gridSize parameter works to prevent overlapping", {
 })
 
 
+test_that("e_cloud with rectangle shape and equal sizeRange maintains aspect ratio", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(5), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(5, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with equal sizeRange values (all words same size)
+  # This was causing squares to appear instead of rectangles before the fix
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 4.0, sizeRange = c(20, 20))
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and custom ratio
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$rectangleRatio,
+    4.0
+  )
+  # Verify the equal sizeRange is preserved
+  expect_equal(
+    plot$x$opts$series[[1]]$sizeRange,
+    c(20, 20)
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
 test_that("e_liquid plot has the good data structure and type", {
   liquid <- data.frame(val = c(0.6, 0.5, 0.4))
 
