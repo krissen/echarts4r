@@ -761,6 +761,90 @@ test_that("e_cloud with rectangle shape and custom rectangleRatio works", {
 })
 
 
+test_that("e_cloud with large font sizes and drawOutOfBound parameter works", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(3), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(3, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with large font sizes and drawOutOfBound = TRUE
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(10, 100), drawOutOfBound = TRUE)
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and drawOutOfBound parameter
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$drawOutOfBound,
+    TRUE
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$sizeRange,
+    c(10, 100)
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
+test_that("e_cloud with large font sizes and shrinkToFit parameter works", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(3), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(3, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with large font sizes and shrinkToFit = TRUE
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(10, 100), shrinkToFit = TRUE)
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and shrinkToFit parameter
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$shrinkToFit,
+    TRUE
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$sizeRange,
+    c(10, 100)
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
 test_that("e_liquid plot has the good data structure and type", {
   liquid <- data.frame(val = c(0.6, 0.5, 0.4))
 
