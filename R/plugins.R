@@ -6,6 +6,11 @@
 #' @param word,freq Terms and their frequencies.
 #' @param color Word color.
 #' @param rm_x,rm_y Whether to remove x and y axis, defaults to \code{TRUE}.
+#' @param ... Additional parameters passed to the wordcloud series, including:
+#'   \describe{
+#'     \item{shape}{Shape of the wordcloud. Can be 'circle', 'cardioid', 'diamond', 'rectangle', 'triangle-forward', 'triangle', 'pentagon', 'star'. The 'rectangle' shape uses horizontal orientation and fills the available width.}
+#'     \item{sizeRange}{Vector of two numbers specifying the range of font sizes.}
+#'   }
 #'
 #' @examples
 #' words <- function(n = 5000) {
@@ -23,6 +28,12 @@
 #'   e_color_range(freq, color) |>
 #'   e_charts() |>
 #'   e_cloud(terms, freq, color, shape = "circle", sizeRange = c(3, 15))
+#'
+#' # Rectangle shape example - uses horizontal orientation and fills available width
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(3, 15))
 #' @seealso \href{https://github.com/ecomfe/echarts-wordcloud}{official documentation}
 #'
 #' @rdname e_cloud

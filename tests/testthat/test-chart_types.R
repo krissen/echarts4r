@@ -675,6 +675,54 @@ test_that("e_cloud plot has the good data structure and type", {
 })
 
 
+test_that("e_cloud with rectangle shape has the good data structure and type", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(5))
+
+  set.seed(1)
+  tf$freq <- round(rnorm(5, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape - should use horizontal orientation and fill available width
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(3, 15)) |>
+    e_title("Rectangle Wordcloud", "Horizontal layout test")
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series is properly configured for rectangle shape
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+  
+  # Verify data structure is the same as other shapes
+  expect_equal(
+    plot$x$opts$series[[1]]$data,
+    list(
+      list(value = 70.95281, name = "ARJIY6526F", textStyle = list(color = "#F6EFA6")),
+      list(value = 58.29508, name = "BSVON5071J", textStyle = list(color = "#D78071")),
+      list(value = 56.83643, name = "DKUJE7845T", textStyle = list(color = "#D4796C")),
+      list(value = 48.73546, name = "YWANU8677A", textStyle = list(color = "#C45052")),
+      list(value = 46.64371, name = "GNUGI5922C", textStyle = list(color = "#BF444C"))
+    )
+  )
+})
+
+
 test_that("e_liquid plot has the good data structure and type", {
   liquid <- data.frame(val = c(0.6, 0.5, 0.4))
 
