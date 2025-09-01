@@ -64,18 +64,18 @@
 #'   e_color_range(freq, color) |>
 #'   e_charts() |>
 #'   e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 4.0, sizeRange = c(20, 20))
-
-# Control wordcloud size - use full available space
-tf |>
-  e_color_range(freq, color) |>
-  e_charts() |>
-  e_cloud(terms, freq, color, shape = "rectangle", width = "100%", height = "95%")
-
-# Or specify exact pixel dimensions
-tf |>
-  e_color_range(freq, color) |>
-  e_charts() |>
-  e_cloud(terms, freq, color, shape = "circle", width = 600, height = 400)
+#'
+#' # Control wordcloud size - use full available space
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", width = "100%", height = "95%")
+#'
+#' # Or specify exact pixel dimensions
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "circle", width = 600, height = 400)
 #' @seealso \href{https://github.com/ecomfe/echarts-wordcloud}{official documentation}
 #'
 #' @rdname e_cloud
