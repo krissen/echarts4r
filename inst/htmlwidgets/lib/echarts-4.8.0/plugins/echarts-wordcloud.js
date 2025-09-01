@@ -63,9 +63,9 @@ external_echarts_.extendSeriesModel({
 
     top: 'center',
 
-    width: '70%',
+    width: '90%',
 
-    height: '80%',
+    height: '85%',
 
     sizeRange: [12, 60],
 
@@ -1582,8 +1582,21 @@ function updateCanvasMask(maskCanvas) {
 
 external_echarts_.registerLayout(function (ecModel, api) {
   ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
+    var boxLayoutParams = seriesModel.getBoxLayoutParams();
+    
+    // For rectangle shapes, use more aggressive sizing to fill available space
+    if (seriesModel.get('shape') === 'rectangle') {
+      // Only override if user hasn't specified custom width/height
+      if (!seriesModel.option.width) {
+        boxLayoutParams.width = '95%';
+      }
+      if (!seriesModel.option.height) {
+        boxLayoutParams.height = '90%';
+      }
+    }
+    
     var gridRect = external_echarts_.helper.getLayoutRect(
-      seriesModel.getBoxLayoutParams(),
+      boxLayoutParams,
       {
         width: api.getWidth(),
         height: api.getHeight()
@@ -1651,7 +1664,17 @@ external_echarts_.registerLayout(function (ecModel, api) {
       gridSize: gridSize,
 
       ellipticity: seriesModel.get('shape') === 'rectangle' 
-        ? 1.0 / (seriesModel.get('rectangleRatio') || 2.0)
+        ? (function() {
+            var ratio = seriesModel.get('rectangleRatio') || 2.0;
+            var baseEllipticity = 1.0 / ratio;
+            // When shrinkToFit is enabled, make ellipticity more pronounced to ensure 
+            // rectangle ratio is clearly visible even with word shrinking
+            if (seriesModel.get('shrinkToFit')) {
+              // Square the inverse ratio to make the effect more dramatic
+              return baseEllipticity * baseEllipticity * Math.max(1.0, ratio / 2.0);
+            }
+            return baseEllipticity;
+          })()
         : gridRect.height / gridRect.width,
 
       minRotation: rotationRange[0] * DEGREE_TO_RAD,

@@ -6,6 +6,17 @@
 #' @param word,freq Terms and their frequencies.
 #' @param color Word color.
 #' @param rm_x,rm_y Whether to remove x and y axis, defaults to \code{TRUE}.
+#' @param ... Additional parameters passed to the wordcloud series, including:
+#'   \describe{
+#'     \item{shape}{Shape of the wordcloud. Can be 'circle', 'cardioid', 'diamond', 'rectangle', 'triangle-forward', 'triangle', 'pentagon', 'star'. The 'rectangle' shape uses horizontal orientation and fills the available width.}
+#'     \item{rectangleRatio}{Aspect ratio for rectangle shape (width:height). Default is 2.0. Only used when shape = "rectangle". The rectangle shape maintains this ratio even with equal sizeRange values.}
+#'     \item{sizeRange}{Vector of two numbers specifying the range of font sizes. Equal values (e.g., c(20, 20)) are supported and rectangle shapes will maintain their aspect ratio.}
+#'     \item{gridSize}{Grid size for word placement collision detection. Default is 8, but larger values (10-16) can prevent word overlapping, especially with larger fonts.}
+#'     \item{drawOutOfBound}{Logical. Whether to allow words to be drawn outside the shape bounds. Default FALSE. Set to TRUE when using large font sizes.}
+#'     \item{shrinkToFit}{Logical. Whether to shrink words that don't fit within the shape. Default FALSE. Alternative to drawOutOfBound for large fonts.}
+#'     \item{width}{Character or numeric. Width of the wordcloud area. Defaults to '90%' (95% for rectangle shapes). Can be percentage string like '100%' or absolute pixels.}
+#'     \item{height}{Character or numeric. Height of the wordcloud area. Defaults to '85%' (90% for rectangle shapes). Can be percentage string like '100%' or absolute pixels.}
+#'   }
 #'
 #' @examples
 #' words <- function(n = 5000) {
@@ -23,6 +34,48 @@
 #'   e_color_range(freq, color) |>
 #'   e_charts() |>
 #'   e_cloud(terms, freq, color, shape = "circle", sizeRange = c(3, 15))
+#'
+#' # Rectangle shape example - uses horizontal orientation and fills available width
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(3, 15))
+#'
+#' # Rectangle shape with custom aspect ratio (3:1 instead of default 2:1)
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 3.0, sizeRange = c(3, 15))
+#'
+#' # For large font sizes, use drawOutOfBound = TRUE to allow words outside shape bounds
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(10, 100), drawOutOfBound = TRUE)
+#'
+#' # To prevent word overlapping, increase gridSize (especially useful with larger fonts)
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(5, 25), gridSize = 12)
+#'
+#' # Equal sizeRange values now work correctly with rectangle shapes (maintains aspect ratio)
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 4.0, sizeRange = c(20, 20))
+#'
+#' # Control wordcloud size - use full available space
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", width = "100%", height = "95%")
+#'
+#' # Or specify exact pixel dimensions
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "circle", width = 600, height = 400)
 #' @seealso \href{https://github.com/ecomfe/echarts-wordcloud}{official documentation}
 #'
 #' @rdname e_cloud
@@ -72,11 +125,14 @@ e_cloud_ <- function(e, word, freq, color = NULL, rm_x = TRUE, rm_y = TRUE, ...)
 
   e$x$opts$series <- append(e$x$opts$series, list(serie))
 
-  # add dependency
+  # add dependency with cache busting for Shiny environments
   path <- system.file("htmlwidgets/lib/echarts-4.8.0/plugins", package = "echarts4r")
+  # Add package version and timestamp for cache busting to ensure Shiny uses updated wordcloud implementation
+  pkg_version <- utils::packageVersion("echarts4r")
+  cache_bust <- format(Sys.time(), "%Y%m%d%H%M")
   dep <- htmltools::htmlDependency(
     name = "echarts-wordcloud",
-    version = "1.0.0",
+    version = paste0("2.0.0-", pkg_version, "-", cache_bust),
     src = c(file = path),
     script = "echarts-wordcloud.min.js"
   )

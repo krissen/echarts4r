@@ -366,6 +366,16 @@ tf |>
   e_title("Wordcloud", "Random strings")
 ```
 
+The wordcloud also supports a rectangle shape that uses horizontal orientation and fills the available width:
+
+```{r}
+tf |> 
+  e_color_range(freq, color) |> 
+  e_charts() |> 
+  e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(3, 15)) |> 
+  e_title("Rectangle Wordcloud", "Horizontal layout")
+```
+
 ## Liquifill
 
 ```{r}

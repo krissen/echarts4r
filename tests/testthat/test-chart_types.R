@@ -675,6 +675,258 @@ test_that("e_cloud plot has the good data structure and type", {
 })
 
 
+test_that("e_cloud with rectangle shape has the good data structure and type", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(5))
+
+  set.seed(1)
+  tf$freq <- round(rnorm(5, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape - should use horizontal orientation and fill available width
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(3, 15)) |>
+    e_title("Rectangle Wordcloud", "Horizontal layout test")
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series is properly configured for rectangle shape
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+  
+  # Verify data structure is the same as other shapes
+  expect_equal(
+    plot$x$opts$series[[1]]$data,
+    list(
+      list(value = 70.95281, name = "ARJIY6526F", textStyle = list(color = "#F6EFA6")),
+      list(value = 58.29508, name = "BSVON5071J", textStyle = list(color = "#D78071")),
+      list(value = 56.83643, name = "DKUJE7845T", textStyle = list(color = "#D4796C")),
+      list(value = 48.73546, name = "YWANU8677A", textStyle = list(color = "#C45052")),
+      list(value = 46.64371, name = "GNUGI5922C", textStyle = list(color = "#BF444C"))
+    )
+  )
+})
+
+
+test_that("e_cloud with rectangle shape and custom rectangleRatio works", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(5), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(5, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with custom aspect ratio
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 3.0, sizeRange = c(3, 15))
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and custom ratio
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$rectangleRatio,
+    3.0
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
+test_that("e_cloud with large font sizes and drawOutOfBound parameter works", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(3), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(3, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with large font sizes and drawOutOfBound = TRUE
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(10, 100), drawOutOfBound = TRUE)
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and drawOutOfBound parameter
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$drawOutOfBound,
+    TRUE
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$sizeRange,
+    c(10, 100)
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
+test_that("e_cloud with large font sizes and shrinkToFit parameter works", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(3), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(3, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with large font sizes and shrinkToFit = TRUE
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(10, 100), shrinkToFit = TRUE)
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and shrinkToFit parameter
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$shrinkToFit,
+    TRUE
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$sizeRange,
+    c(10, 100)
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
+test_that("e_cloud with gridSize parameter works to prevent overlapping", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(5), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(5, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test with custom gridSize to prevent word overlapping
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(5, 25), gridSize = 12)
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and custom gridSize
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$gridSize,
+    12
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
+test_that("e_cloud with rectangle shape and equal sizeRange maintains aspect ratio", {
+  words <- function(n = 5000) {
+    set.seed(1)
+    a <- do.call(paste0, replicate(5, sample(LETTERS, n, TRUE), FALSE))
+    paste0(a, sprintf("%04d", sample(9999, n, TRUE)), sample(LETTERS, n, TRUE))
+  }
+
+  tf <- data.frame(terms = words(5), stringsAsFactors = FALSE)
+  set.seed(1)
+  tf$freq <- round(rnorm(5, 55, 10), 5)
+  tf <- tf |>
+    dplyr::arrange(-freq)
+
+  # Test rectangle shape with equal sizeRange values (all words same size)
+  # This was causing squares to appear instead of rectangles before the fix
+  plot <- tf |>
+    e_color_range(freq, color) |>
+    e_charts() |>
+    e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 4.0, sizeRange = c(20, 20))
+
+  expect_s3_class(plot, "echarts4r")
+  expect_s3_class(plot, "htmlwidget")
+
+  # Verify the series has the rectangle shape and custom ratio
+  expect_equal(
+    plot$x$opts$series[[1]]$shape,
+    "rectangle"
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$rectangleRatio,
+    4.0
+  )
+  # Verify the equal sizeRange is preserved
+  expect_equal(
+    plot$x$opts$series[[1]]$sizeRange,
+    c(20, 20)
+  )
+  expect_equal(
+    plot$x$opts$series[[1]]$type,
+    "wordCloud"
+  )
+})
+
+
 test_that("e_liquid plot has the good data structure and type", {
   liquid <- data.frame(val = c(0.6, 0.5, 0.4))
 
