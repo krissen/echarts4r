@@ -1664,7 +1664,17 @@ external_echarts_.registerLayout(function (ecModel, api) {
       gridSize: gridSize,
 
       ellipticity: seriesModel.get('shape') === 'rectangle' 
-        ? 1.0 / (seriesModel.get('rectangleRatio') || 2.0)
+        ? (function() {
+            var ratio = seriesModel.get('rectangleRatio') || 2.0;
+            var baseEllipticity = 1.0 / ratio;
+            // When shrinkToFit is enabled, make ellipticity more pronounced to ensure 
+            // rectangle ratio is clearly visible even with word shrinking
+            if (seriesModel.get('shrinkToFit')) {
+              // Square the inverse ratio to make the effect more dramatic
+              return baseEllipticity * baseEllipticity * Math.max(1.0, ratio / 2.0);
+            }
+            return baseEllipticity;
+          })()
         : gridRect.height / gridRect.width,
 
       minRotation: rotationRange[0] * DEGREE_TO_RAD,
