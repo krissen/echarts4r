@@ -486,17 +486,13 @@ var WordCloud = function WordCloud(elements, options) {
         settings.shape = function shapeRectangle(theta) {
           // Use configurable rectangle ratio instead of hardcoded values
           var horizontalScale = settings.rectangleRatio; // Configurable width scale
-          var verticalScale = 1.0;   // Standard height
+          var verticalScale = 1.0;   // Standard height scale
           
           // Calculate the scaling factors for horizontal and vertical directions
-          var cosTheta = Math.abs(Math.cos(theta));
-          var sinTheta = Math.abs(Math.sin(theta));
-          
-          // Apply different scaling for horizontal vs vertical directions
-          // This creates the rectangle shape with configurable aspect ratio
+          // Similar to square shape but with configurable horizontal scale
           return Math.min(
-            horizontalScale / Math.max(cosTheta, 0.1), // Horizontal direction - configurable
-            verticalScale / Math.max(sinTheta, 0.1)    // Vertical direction - standard
+            horizontalScale / Math.abs(Math.cos(theta)),
+            verticalScale / Math.abs(Math.sin(theta))
           );
         };
         break;
