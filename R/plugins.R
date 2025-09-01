@@ -14,6 +14,8 @@
 #'     \item{gridSize}{Grid size for word placement collision detection. Default is 8, but larger values (10-16) can prevent word overlapping, especially with larger fonts.}
 #'     \item{drawOutOfBound}{Logical. Whether to allow words to be drawn outside the shape bounds. Default FALSE. Set to TRUE when using large font sizes.}
 #'     \item{shrinkToFit}{Logical. Whether to shrink words that don't fit within the shape. Default FALSE. Alternative to drawOutOfBound for large fonts.}
+#'     \item{width}{Character or numeric. Width of the wordcloud area. Defaults to '90%' (95% for rectangle shapes). Can be percentage string like '100%' or absolute pixels.}
+#'     \item{height}{Character or numeric. Height of the wordcloud area. Defaults to '85%' (90% for rectangle shapes). Can be percentage string like '100%' or absolute pixels.}
 #'   }
 #'
 #' @examples
@@ -62,6 +64,18 @@
 #'   e_color_range(freq, color) |>
 #'   e_charts() |>
 #'   e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 4.0, sizeRange = c(20, 20))
+
+# Control wordcloud size - use full available space
+tf |>
+  e_color_range(freq, color) |>
+  e_charts() |>
+  e_cloud(terms, freq, color, shape = "rectangle", width = "100%", height = "95%")
+
+# Or specify exact pixel dimensions
+tf |>
+  e_color_range(freq, color) |>
+  e_charts() |>
+  e_cloud(terms, freq, color, shape = "circle", width = 600, height = 400)
 #' @seealso \href{https://github.com/ecomfe/echarts-wordcloud}{official documentation}
 #'
 #' @rdname e_cloud

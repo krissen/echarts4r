@@ -63,9 +63,9 @@ external_echarts_.extendSeriesModel({
 
     top: 'center',
 
-    width: '70%',
+    width: '90%',
 
-    height: '80%',
+    height: '85%',
 
     sizeRange: [12, 60],
 
@@ -1582,8 +1582,21 @@ function updateCanvasMask(maskCanvas) {
 
 external_echarts_.registerLayout(function (ecModel, api) {
   ecModel.eachSeriesByType('wordCloud', function (seriesModel) {
+    var boxLayoutParams = seriesModel.getBoxLayoutParams();
+    
+    // For rectangle shapes, use more aggressive sizing to fill available space
+    if (seriesModel.get('shape') === 'rectangle') {
+      // Only override if user hasn't specified custom width/height
+      if (!seriesModel.option.width) {
+        boxLayoutParams.width = '95%';
+      }
+      if (!seriesModel.option.height) {
+        boxLayoutParams.height = '90%';
+      }
+    }
+    
     var gridRect = external_echarts_.helper.getLayoutRect(
-      seriesModel.getBoxLayoutParams(),
+      boxLayoutParams,
       {
         width: api.getWidth(),
         height: api.getHeight()
