@@ -410,6 +410,7 @@ var WordCloud = function WordCloud(elements, options) {
 
     shape: 'circle',
     ellipticity: 0.65,
+    rectangleRatio: 2.0,
 
     classes: null,
 
@@ -480,13 +481,11 @@ var WordCloud = function WordCloud(elements, options) {
         break;
 
       case 'rectangle':
-        // Rectangle shape: horizontal orientation (wide side horizontal)
-        // Uses full width (100%) and standard height
-        // Creates a rectangle that's wider than it is tall for horizontal emphasis
+        // Rectangle shape: horizontal orientation (wide side horizontal)  
+        // Uses configurable aspect ratio (default 2:1)
         settings.shape = function shapeRectangle(theta) {
-          // Create a rectangle with aspect ratio of 2:1 (width:height)
-          // This ensures the horizontal orientation requested in the requirements
-          var horizontalScale = 2.0; // Makes the shape twice as wide as tall
+          // Use configurable rectangle ratio instead of hardcoded values
+          var horizontalScale = settings.rectangleRatio; // Configurable width scale
           var verticalScale = 1.0;   // Standard height
           
           // Calculate the scaling factors for horizontal and vertical directions
@@ -494,9 +493,9 @@ var WordCloud = function WordCloud(elements, options) {
           var sinTheta = Math.abs(Math.sin(theta));
           
           // Apply different scaling for horizontal vs vertical directions
-          // This creates the rectangle shape with horizontal emphasis
+          // This creates the rectangle shape with configurable aspect ratio
           return Math.min(
-            horizontalScale / Math.max(cosTheta, 0.1), // Horizontal direction - wider
+            horizontalScale / Math.max(cosTheta, 0.1), // Horizontal direction - configurable
             verticalScale / Math.max(sinTheta, 0.1)    // Vertical direction - standard
           );
         };
@@ -1667,7 +1666,8 @@ external_echarts_.registerLayout(function (ecModel, api) {
 
       shuffle: false,
 
-      shape: seriesModel.get('shape')
+      shape: seriesModel.get('shape'),
+      rectangleRatio: seriesModel.get('rectangleRatio') || 2.0
     });
 
     function onWordCloudDrawn(e) {

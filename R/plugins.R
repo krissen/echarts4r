@@ -9,6 +9,7 @@
 #' @param ... Additional parameters passed to the wordcloud series, including:
 #'   \describe{
 #'     \item{shape}{Shape of the wordcloud. Can be 'circle', 'cardioid', 'diamond', 'rectangle', 'triangle-forward', 'triangle', 'pentagon', 'star'. The 'rectangle' shape uses horizontal orientation and fills the available width.}
+#'     \item{rectangleRatio}{Aspect ratio for rectangle shape (width:height). Default is 2.0. Only used when shape = "rectangle".}
 #'     \item{sizeRange}{Vector of two numbers specifying the range of font sizes.}
 #'   }
 #'
@@ -34,6 +35,12 @@
 #'   e_color_range(freq, color) |>
 #'   e_charts() |>
 #'   e_cloud(terms, freq, color, shape = "rectangle", sizeRange = c(3, 15))
+#'
+#' # Rectangle shape with custom aspect ratio (3:1 instead of default 2:1)
+#' tf |>
+#'   e_color_range(freq, color) |>
+#'   e_charts() |>
+#'   e_cloud(terms, freq, color, shape = "rectangle", rectangleRatio = 3.0, sizeRange = c(3, 15))
 #' @seealso \href{https://github.com/ecomfe/echarts-wordcloud}{official documentation}
 #'
 #' @rdname e_cloud
