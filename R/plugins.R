@@ -125,11 +125,14 @@ e_cloud_ <- function(e, word, freq, color = NULL, rm_x = TRUE, rm_y = TRUE, ...)
 
   e$x$opts$series <- append(e$x$opts$series, list(serie))
 
-  # add dependency
+  # add dependency with cache busting for Shiny environments
   path <- system.file("htmlwidgets/lib/echarts-4.8.0/plugins", package = "echarts4r")
+  # Add package version and timestamp for cache busting to ensure Shiny uses updated wordcloud implementation
+  pkg_version <- utils::packageVersion("echarts4r")
+  cache_bust <- format(Sys.time(), "%Y%m%d%H%M")
   dep <- htmltools::htmlDependency(
     name = "echarts-wordcloud",
-    version = "1.0.0",
+    version = paste0("2.0.0-", pkg_version, "-", cache_bust),
     src = c(file = path),
     script = "echarts-wordcloud.min.js"
   )
