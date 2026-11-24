@@ -396,6 +396,10 @@ var WordCloud = function WordCloud(elements, options) {
     maskGapWidth: 0.3,
 
     layoutAnimation: true,
+    // ms of word placement per task in an animated layout; 0 places one word
+    // per task (the original behaviour). Must be listed here: only keys of
+    // this object are copied from the options.
+    layoutBudget: 8,
 
     wait: 0,
     abortThreshold: 0, // disabled
