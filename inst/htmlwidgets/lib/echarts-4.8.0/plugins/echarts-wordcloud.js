@@ -559,6 +559,11 @@ var WordCloud = function WordCloud(elements, options) {
   var rotationStep = settings.rotationStep;
 
   /* information/object available to all functions, set when start() */
+  // Count of free grid cells, as a summed-area table, to rule out a word that
+  // cannot fit anywhere before scanning the spiral for it (perf, #2630).
+  var gridVersion = 0; // bumped whenever a cell is filled
+  var freeSumVersion = -1; // gridVersion the table was built for
+  var freeSum; // Int32Array, (ngx + 1) * (ngy + 1)
   var grid, // 2d array containing filling information
     ngx,
     ngy, // width and height of the grid
@@ -675,6 +680,7 @@ var WordCloud = function WordCloud(elements, options) {
 
   /* Get points on the grid for a given radius away from the center */
   var pointsAtRadius = [];
+  var POINT_CHUNK = 32;
   var getPointsAtRadius = function getPointsAtRadius(radius) {
     if (pointsAtRadius[radius]) {
       return pointsAtRadius[radius];
@@ -706,6 +712,39 @@ var WordCloud = function WordCloud(elements, options) {
         (t / T) * 2 * Math.PI
       ]);
     }
+
+    // Bounding box of the ring (perf, #2630): lets putWord() skip a whole ring.
+    var bx0 = Infinity, bx1 = -Infinity, by0 = Infinity, by1 = -Infinity;
+    for (var bi = 0; bi < points.length; bi++) {
+      if (points[bi][0] < bx0) bx0 = points[bi][0];
+      if (points[bi][0] > bx1) bx1 = points[bi][0];
+      if (points[bi][1] < by0) by0 = points[bi][1];
+      if (points[bi][1] > by1) by1 = points[bi][1];
+    }
+    points.bbox = [bx0, bx1, by0, by1];
+    // Flat copies and a bounding box per chunk of POINT_CHUNK points, so the
+    // scan can skip a stretch of the ring that lies outside the usable window.
+    var nPts = points.length;
+    var pxs = new Float64Array(nPts);
+    var pys = new Float64Array(nPts);
+    var chunks = new Float64Array(Math.ceil(nPts / POINT_CHUNK) * 4);
+    for (var pi = 0; pi < nPts; pi++) {
+      pxs[pi] = points[pi][0];
+      pys[pi] = points[pi][1];
+      var cj = Math.floor(pi / POINT_CHUNK) * 4;
+      if (pi % POINT_CHUNK === 0) {
+        chunks[cj] = chunks[cj + 1] = pxs[pi];
+        chunks[cj + 2] = chunks[cj + 3] = pys[pi];
+      } else {
+        if (pxs[pi] < chunks[cj]) chunks[cj] = pxs[pi];
+        if (pxs[pi] > chunks[cj + 1]) chunks[cj + 1] = pxs[pi];
+        if (pys[pi] < chunks[cj + 2]) chunks[cj + 2] = pys[pi];
+        if (pys[pi] > chunks[cj + 3]) chunks[cj + 3] = pys[pi];
+      }
+    }
+    points.xs = pxs;
+    points.ys = pys;
+    points.chunks = chunks;
 
     pointsAtRadius[radius] = points;
     return points;
@@ -945,6 +984,48 @@ var WordCloud = function WordCloud(elements, options) {
     };
   };
 
+  /* (Re)build the free-cell summed-area table of the current grid. */
+  var buildFreeSum = function buildFreeSum() {
+    var h = ngy + 1;
+    freeSum = new Int32Array((ngx + 1) * h);
+    for (var x = 0; x < ngx; x++) {
+      var col = grid[x];
+      var run = 0;
+      for (var y = 0; y < ngy; y++) {
+        if (col[y]) {
+          run++;
+        }
+        freeSum[(x + 1) * h + (y + 1)] = freeSum[x * h + (y + 1)] + run;
+      }
+    }
+    freeSumVersion = gridVersion;
+  };
+
+  /* Could a word with n occupied cells and the bounding box
+       [ox0, ox1] x [oy0, oy1] fit at any gx in [minGx, maxGx], gy in
+       [minGy, maxGy]? false is certain (fewer than n free cells in every
+       box), true only means that the scan has to look. */
+  var mayFitAnywhere = function mayFitAnywhere(
+    n, ox0, ox1, oy0, oy1, minGx, maxGx, minGy, maxGy
+  ) {
+    if (freeSumVersion !== gridVersion) {
+      buildFreeSum();
+    }
+    var h = ngy + 1;
+    for (var gx = minGx; gx <= maxGx; gx++) {
+      var xa = (gx + ox0) * h;
+      var xb = (gx + ox1 + 1) * h;
+      for (var gy = minGy; gy <= maxGy; gy++) {
+        var ya = gy + oy0;
+        var yb = gy + oy1 + 1;
+        if (freeSum[xb + yb] - freeSum[xa + yb] - freeSum[xb + ya] + freeSum[xa + ya] >= n) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   /* Determine if there is room available in the given dimension */
   var canFitText = function canFitText(gx, gy, gw, gh, occupied) {
     // Go through the occupied points,
@@ -1160,6 +1241,7 @@ var WordCloud = function WordCloud(elements, options) {
 
       fillGridAt(px, py, drawMask, dimension, item);
     }
+    gridVersion++;
 
     if (drawMask) {
       ctx.restore();
@@ -1213,9 +1295,37 @@ var WordCloud = function WordCloud(elements, options) {
     // start looking for the nearest points
     var r = maxRadius + 1;
 
-    var tryToPutWordAtPoint = function (gxy) {
-      var gx = Math.floor(gxy[0] - info.gw / 2);
-      var gy = Math.floor(gxy[1] - info.gh / 2);
+    // Positions where canFitText() can possibly succeed (perf, #2630). Without
+    // drawOutOfBound a position with any occupied cell outside the grid fails
+    // there, so only gx in [minGx, maxGx] and gy in [minGy, maxGy] need a call;
+    // the result for every other position is the same (false), only cheaper.
+    var minGx = -Infinity, maxGx = Infinity, minGy = -Infinity, maxGy = Infinity;
+    var occ = info.occupied;
+    if (!settings.drawOutOfBound && occ.length > 0) {
+      var ox0 = Infinity, ox1 = -Infinity, oy0 = Infinity, oy1 = -Infinity;
+      for (var oi = 0; oi < occ.length; oi++) {
+        if (occ[oi][0] < ox0) ox0 = occ[oi][0];
+        if (occ[oi][0] > ox1) ox1 = occ[oi][0];
+        if (occ[oi][1] < oy0) oy0 = occ[oi][1];
+        if (occ[oi][1] > oy1) oy1 = occ[oi][1];
+      }
+      minGx = -ox0;
+      maxGx = ngx - 1 - ox1;
+      minGy = -oy0;
+      maxGy = ngy - 1 - oy1;
+      // Nowhere to put the word: no scan (the result would be the same).
+      if (!mayFitAnywhere(occ.length, ox0, ox1, oy0, oy1, minGx, maxGx, minGy, maxGy)) {
+        r = 0;
+      }
+    }
+    var halfGw = info.gw / 2;
+    var halfGh = info.gh / 2;
+    // The last position tried: the grid does not change during the scan, so a
+    // position that failed fails again (a ring has more points than cells).
+    var lastGx = NaN;
+    var lastGy = NaN;
+
+    var tryToPutWordAtPoint = function (gxy, gx, gy) {
       var gw = info.gw;
       var gh = info.gh;
 
@@ -1253,6 +1363,18 @@ var WordCloud = function WordCloud(elements, options) {
     while (r--) {
       var points = getPointsAtRadius(maxRadius - r);
 
+      // A ring whose every position lies outside the usable window cannot hold
+      // the word (Math.floor is monotonic, so the bounding box is exact).
+      if (
+        !settings.shuffle &&
+        (Math.floor(points.bbox[1] - halfGw) < minGx ||
+          Math.floor(points.bbox[0] - halfGw) > maxGx ||
+          Math.floor(points.bbox[3] - halfGh) < minGy ||
+          Math.floor(points.bbox[2] - halfGh) > maxGy)
+      ) {
+        continue;
+      }
+
       if (settings.shuffle) {
         points = [].concat(points);
         shuffleArray(points);
@@ -1261,10 +1383,40 @@ var WordCloud = function WordCloud(elements, options) {
       // Try to fit the words by looking at each point.
       // array.some() will stop and return true
       // when putWordAtPoint() returns true.
-      for (var i = 0; i < points.length; i++) {
-        var res = tryToPutWordAtPoint(points[i]);
-        if (res) {
-          return res;
+      var nPoints = points.length;
+      // (A shuffled copy of the ring has no flat arrays or chunk boxes.)
+      var flat = !settings.shuffle;
+      var pxs = flat ? points.xs : null;
+      var pys = flat ? points.ys : null;
+      var chunks = flat ? points.chunks : null;
+      for (var c0 = 0; c0 < nPoints; c0 += POINT_CHUNK) {
+        if (flat) {
+          var cj = (c0 / POINT_CHUNK) * 4;
+          if (
+            Math.floor(chunks[cj + 1] - halfGw) < minGx ||
+            Math.floor(chunks[cj] - halfGw) > maxGx ||
+            Math.floor(chunks[cj + 3] - halfGh) < minGy ||
+            Math.floor(chunks[cj + 2] - halfGh) > maxGy
+          ) {
+            continue;
+          }
+        }
+        var cEnd = Math.min(c0 + POINT_CHUNK, nPoints);
+        for (var i = c0; i < cEnd; i++) {
+          var gx = Math.floor((flat ? pxs[i] : points[i][0]) - halfGw);
+          if (gx < minGx || gx > maxGx) {
+            continue;
+          }
+          var gy = Math.floor((flat ? pys[i] : points[i][1]) - halfGh);
+          if ((gx === lastGx && gy === lastGy) || gy < minGy || gy > maxGy) {
+            continue;
+          }
+          lastGx = gx;
+          lastGy = gy;
+          var res = tryToPutWordAtPoint(points[i], gx, gy);
+          if (res) {
+            return res;
+          }
         }
       }
 
@@ -1482,35 +1634,51 @@ var WordCloud = function WordCloud(elements, options) {
 
     addEventListener('wordcloudstart', anotherWordCloudStart);
 
+    // Animated layout without a wait places words for up to layoutBudget ms
+    // (default 8) per task and then yields, instead of one task per word
+    // (perf, #2630). The placement order, and so the result, is unchanged.
+    var budget =
+      settings.layoutBudget === undefined || settings.layoutBudget === null
+        ? 8
+        : settings.layoutBudget;
+    var batch = settings.layoutAnimation && settings.wait === 0 && budget > 0;
+
     // At least wait the following code before call the first iteration.
     timer[timerId] = (settings.layoutAnimation ? loopingFunction : setTimeout)(
       function loop() {
-        if (!layouting) {
+        var taskStart = batch ? window.performance.now() : 0;
+        for (;;) {
+          if (!layouting) {
+            return;
+          }
+          if (i >= settings.list.length) {
+            stoppingFunction(timer[timerId]);
+            sendEvent('wordcloudstop', false);
+            removeEventListener('wordcloudstart', anotherWordCloudStart);
+            delete timer[timerId];
+            return;
+          }
+          escapeTime = new Date().getTime();
+          var drawn = putWord(settings.list[i], 0);
+          var canceled = !sendEvent('wordclouddrawn', true, {
+            item: settings.list[i],
+            drawn: drawn
+          });
+          if (exceedTime() || canceled) {
+            stoppingFunction(timer[timerId]);
+            settings.abort();
+            sendEvent('wordcloudabort', false);
+            sendEvent('wordcloudstop', false);
+            removeEventListener('wordcloudstart', anotherWordCloudStart);
+            return;
+          }
+          i++;
+          if (batch && window.performance.now() - taskStart < budget) {
+            continue;
+          }
+          timer[timerId] = loopingFunction(loop, settings.wait);
           return;
         }
-        if (i >= settings.list.length) {
-          stoppingFunction(timer[timerId]);
-          sendEvent('wordcloudstop', false);
-          removeEventListener('wordcloudstart', anotherWordCloudStart);
-          delete timer[timerId];
-          return;
-        }
-        escapeTime = new Date().getTime();
-        var drawn = putWord(settings.list[i], 0);
-        var canceled = !sendEvent('wordclouddrawn', true, {
-          item: settings.list[i],
-          drawn: drawn
-        });
-        if (exceedTime() || canceled) {
-          stoppingFunction(timer[timerId]);
-          settings.abort();
-          sendEvent('wordcloudabort', false);
-          sendEvent('wordcloudstop', false);
-          removeEventListener('wordcloudstart', anotherWordCloudStart);
-          return;
-        }
-        i++;
-        timer[timerId] = loopingFunction(loop, settings.wait);
       },
       settings.wait
     );
@@ -1690,6 +1858,7 @@ external_echarts_.registerLayout(function (ecModel, api) {
       shrinkToFit: seriesModel.get('shrinkToFit'),
 
       layoutAnimation: seriesModel.get('layoutAnimation'),
+      layoutBudget: seriesModel.get('layoutBudget'),
 
       shuffle: false,
 
