@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - master
+      - e_cloud__rectangle
   pull_request:
     branches:
       - main
       - master
+      - e_cloud__rectangle
 
 name: R-CMD-check
 
