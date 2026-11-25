@@ -1,6 +1,7 @@
 # echarts4r 0.4.6
 
-- `e_cloud()`: faster word placement in the bundled echarts-wordcloud (same words at the same positions): positions that cannot hold the word are skipped, and `layoutAnimation = TRUE` places words for `layoutBudget` ms (default 8) per task instead of one per task. The layout code is the upstream echarts-wordcloud / wordcloud2.js (Tim Guan-tin Chien) with this fork's earlier changes.
+- `e_cloud()`: new option `wordPadding` (default `c(8, 0)`, px horizontally and vertically) keeps a minimum gap between words, so neighbouring multi-word keywords no longer read as one phrase. This changes the default layout: words move a few px and in dense clouds some shrink a step; `wordPadding = c(0, 0)` restores the previous layout exactly.
+- `e_cloud()`: faster word placement in the bundled echarts-wordcloud (same words at the same positions for a given `wordPadding`): positions that cannot hold the word are skipped, and `layoutAnimation = TRUE` places words for `layoutBudget` ms (default 8) per task instead of one per task. The layout code is the upstream echarts-wordcloud / wordcloud2.js (Tim Guan-tin Chien) with this fork's earlier changes.
 - Fix missing package anchors in Rd files for CRAN HTML documentation
 - Fix lost braces issues in `e_pictorial.Rd` and `nesting.Rd` documentation
 - Bump to echarts.js 5.4.3

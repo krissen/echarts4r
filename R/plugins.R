@@ -13,11 +13,12 @@
 #'     \item{sizeRange}{Vector of two numbers specifying the range of font sizes. Equal values (e.g., c(20, 20)) are supported and rectangle shapes will maintain their aspect ratio.}
 #'     \item{gridSize}{Grid size for word placement collision detection. Default is 8, but larger values (10-16) can prevent word overlapping, especially with larger fonts.}
 #'     \item{drawOutOfBound}{Logical. Whether to allow words to be drawn outside the shape bounds. Default FALSE. Set to TRUE when using large font sizes.}
-#'     \item{shrinkToFit}{Logical. Whether to shrink words that don't fit within the shape. Default FALSE. Alternative to drawOutOfBound for large fonts.}
+#'     \item{shrinkToFit}{Logical. Whether to shrink words that do not fit within the shape. Default FALSE. Alternative to drawOutOfBound for large fonts.}
 #'     \item{layoutAnimation}{Logical. Place the words one task at a time (\code{TRUE}) instead of all in one synchronous task. The placement is the same; the page stays responsive while a large cloud is laid out. Default \code{NULL}, which lays everything out in one task.}
-#'     \item{layoutBudget}{Number of milliseconds of words placed per task when \code{layoutAnimation = TRUE}, before yielding to the browser. Default 8.}
-#'     \item{width}{Character or numeric. Width of the wordcloud area. Defaults to '90%' (95% for rectangle shapes). Can be percentage string like '100%' or absolute pixels.}
-#'     \item{height}{Character or numeric. Height of the wordcloud area. Defaults to '85%' (90% for rectangle shapes). Can be percentage string like '100%' or absolute pixels.}
+#'     \item{layoutBudget}{Number of milliseconds of words placed per task when \code{layoutAnimation = TRUE}, before yielding to the browser. Default 8; \code{0} restores the original behaviour of one word per task.}
+#'     \item{wordPadding}{Minimum distance in pixels kept between the ink of two words, in whole grid cells rounded up (see \code{gridSize}): one number for both axes or \code{c(horizontal, vertical)}. Default \code{c(8, 0)}, a word space between words on a line so that two keywords do not run together as one phrase; \code{c(0, 0)} lets words touch, as before this option. A larger value makes a dense cloud shrink more words (\code{shrinkToFit}).}
+#'     \item{width}{Character or numeric. Width of the wordcloud area. Defaults to '90\%' (95\% for rectangle shapes). Can be percentage string like '100\%' or absolute pixels.}
+#'     \item{height}{Character or numeric. Height of the wordcloud area. Defaults to '85\%' (90\% for rectangle shapes). Can be percentage string like '100\%' or absolute pixels.}
 #'   }
 #'
 #' @examples
