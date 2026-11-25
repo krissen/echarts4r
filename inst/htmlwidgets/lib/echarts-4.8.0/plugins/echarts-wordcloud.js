@@ -78,6 +78,12 @@ external_echarts_.extendSeriesModel({
     drawOutOfBound: false,
     shrinkToFit: false,
 
+    // Minimum distance in px between the ink of two words, in whole grid cells
+    // rounded up: one number for both axes or [horizontal, vertical]. The default
+    // keeps a word space between words on a line (two keywords no longer run
+    // together as one phrase); [0, 0] lets words touch, as before this option.
+    wordPadding: [8, 0],
+
     textStyle: {
       fontWeight: 'normal'
     }
@@ -400,6 +406,10 @@ var WordCloud = function WordCloud(elements, options) {
     // per task (the original behaviour). Must be listed here: only keys of
     // this object are copied from the options.
     layoutBudget: 8,
+
+    // Minimum distance in px kept between the ink of two words (whole grid cells,
+    // rounded up); 0 lets words touch.
+    wordPadding: 0,
 
     wait: 0,
     abortThreshold: 0, // disabled
@@ -1245,6 +1255,33 @@ var WordCloud = function WordCloud(elements, options) {
 
       fillGridAt(px, py, drawMask, dimension, item);
     }
+
+    // Keep other words away from this one (wordPadding, #2630): also mark the
+    // cells within ceil(wordPadding / gridSize) cells of an occupied cell
+    // (wordPadding is one number, or [horizontal, vertical] in px). Only
+    // the marking widens; a word is still tested with its own cells, so the
+    // window, ring and free-cell skips of putWord() stay exact. The nearest ink of
+    // the next word is then at least wordPadding px away, rounded up to whole cells.
+    var wordPadding = settings.wordPadding;
+    var padX = Math.ceil(
+      Math.max(0, (Array.isArray(wordPadding) ? wordPadding[0] : wordPadding) || 0) / g
+    );
+    var padY = Math.ceil(
+      Math.max(0, (Array.isArray(wordPadding) ? wordPadding[1] : wordPadding) || 0) / g
+    );
+    if (padX > 0 || padY > 0) {
+      var k = occupied.length;
+      while (k--) {
+        var cx = gx + occupied[k][0];
+        var cy = gy + occupied[k][1];
+        for (var ax = Math.max(0, cx - padX); ax <= Math.min(ngx - 1, cx + padX); ax++) {
+          var col = grid[ax];
+          for (var ay = Math.max(0, cy - padY); ay <= Math.min(ngy - 1, cy + padY); ay++) {
+            col[ay] = false;
+          }
+        }
+      }
+    }
     gridVersion++;
 
     if (drawMask) {
@@ -1863,6 +1900,7 @@ external_echarts_.registerLayout(function (ecModel, api) {
 
       layoutAnimation: seriesModel.get('layoutAnimation'),
       layoutBudget: seriesModel.get('layoutBudget'),
+      wordPadding: seriesModel.get('wordPadding'),
 
       shuffle: false,
 
